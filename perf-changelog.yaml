@@ -3062,3 +3062,10 @@
   description:
     - "Bump vLLM ROCm image from nightly-b50646e5effd7cb5884cd96fdff4c53c18521198 to nightly-4f940896a32c9e2a0eba7f50d521bf5f6b4de458"
   pr-link: https://github.com/SemiAnalysisAI/InferenceX/pull/1546
+
+- config-keys:
+    - gptoss-fp4-mi355x-vllm
+  description:
+    - "Pin image back to vllm/vllm-openai-rocm:v0.19.0 while we work through a v0.21 perf regression on MI355x AITER paths (image was bumped to v0.21.0 in #1406)"
+    - "Switch to AITER-env-based recipe: enable AITER MOE/RMSNORM/UnifiedAttn/A16W4 + HSA_NO_SCRATCH_RECLAIM, drop legacy TRITON_ROPE/BUFFER_OPS/--attention-backend/fuse_rope_kvcache, add --max-num-seqs 256 + --async-scheduling"
+  pr-link: https://github.com/SemiAnalysisAI/InferenceX/pull/XXX
