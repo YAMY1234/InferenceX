@@ -6475,3 +6475,13 @@
     - "Replace the TP2/EP2 arm with TP2/EP1 so the 2-GPU point matches qwen3.5-fp4-b200-sglang-agentic-mtp."
     - "Add HiCache host-DRAM KV tier arms at TP4 concurrency 40, 48, 56, and 64 and TP2 concurrency 20, 24, 28, and 32, using hicache ratio 1.5 with write_through, direct io, and page_first_direct layout."
   pr-link: https://github.com/SemiAnalysisAI/InferenceX/pull/2693
+
+- config-keys:
+    - qwen3.5-fp4-gb300-dynamo-sglang-agentic-agg-tp8-lowlatency
+  scenario-type:
+    - agentic-coding
+  description:
+    - "Add a two-node pure-TP8 Qwen3.5 AgentX latency recipe with DP1/EP1 and actual admission batch size 1."
+    - "Pin decode CUDA graph capture and max-running-requests to batch 1, skip the redundant DP1 scheduler metadata gather, disable attention TP gather for model-managed communication, and enable ReplaySSM."
+    - "The measured native-B1 contract improved P90 interactivity from 459.587 to 689.670 tok/s/user (+50.063%) under the matched AgentX workload; the claim does not extend to DP-attention, expert-parallel, or concurrent-request lanes."
+  pr-link: "https://github.com/SemiAnalysisAI/InferenceX/compare/main...YAMY1234:agentx-upstream/qwen35-pure-tp8-b1-recipe?expand=1"
