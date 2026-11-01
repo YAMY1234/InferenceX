@@ -11769,3 +11769,12 @@
     - "6 DEP2 prefill workers with a DEP8 decode at conc 280-400 or a DEP16 decode at conc 300; MegaMoE, DSpark block 7 with fp8 draft KV, Dynamo KV router with fastokens for prefill and least-loaded routing across decode DP ranks."
     - "Prefill: shortest-prefill-first, chunk 8192, mem-fraction-static 0.85, HiCache 200 GB per rank write_back."
   pr-link: https://github.com/SemiAnalysisAI/InferenceX/pull/4686
+
+- config-keys:
+    - qwen3.5-fp4-gb300-dynamo-sglang-agentic-pp-pareto
+  scenario-type: [agentic-coding]
+  description:
+    - "Serve the embedded MTP draft at its shipped BF16 on the decode workers: drop speculative-draft-model-quantization nvfp4_online, which re-quantized the draft MoE expert weights and activations to NVFP4. nvidia/Qwen3.5-397B-A17B-NVFP4 lists mtp.layers.0* in its ModelOpt exclude_modules and stores the MTP weights in BF16; the pinned image (SGLang bb5e6198) builds the MTP module without quantization for serialized ModelOpt FP4 checkpoints."
+    - "Set SGLANG_NVFP4_CKPT_FP8_NEXTN_MOE to 0 on the decode workers. The pinned image reads it only on the DeepSeek-family HIP path, so Qwen3.5 serving does not change."
+    - "The image, topology, speculative steps and every other setting are unchanged."
+  pr-link: https://github.com/SemiAnalysisAI/InferenceX/pull/XXX
