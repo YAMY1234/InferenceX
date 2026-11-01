@@ -198,7 +198,6 @@ base:
         eplb-algorithm: deepseek
         speculative-algorithm: NEXTN
         speculative-eagle-topk: 1
-        speculative-draft-model-quantization: nvfp4_online
         speculative-moe-runner-backend: flashinfer_trtllm_routed
         speculative-moe-a2a-backend: flashinfer
         chunked-prefill-size: 4096
