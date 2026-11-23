@@ -323,6 +323,7 @@ override_c8:
         decode-warmup-batch-sizes:
         - 2
         - 1
+        prefill-decode-interval: 40
         enable-hierarchical-cache: null
         hicache-size: null
         hicache-io-backend: null
