@@ -7371,7 +7371,7 @@ dsv41flash-fp4-gb300-tilert-agentic-dspark-tp:
           dp-attn: false
 
 qwen3.8next-fp4-gb300-sglang-agentic-mtp:
-  image: lmsysorg/sglang:nightly-dev-cu13-20261103-797af717@sha256:c7c348bc52c410f0e367a46a2a733146017e3de9709694cd42f004fe5d6c763f
+  image: lmsysorg/sglang:qwen38-fn-rubin-a89019e@sha256:3b08340eb9690ab29ba223bc91f6cdd7bc62b7191fd54ed3a9489fa36e28e189
   model: nvidia/Qwen3.8-Flash-Next-NVFP4
   model-prefix: qwen3.8next
   runner: cluster:gb300-nv
@@ -7384,9 +7384,13 @@ qwen3.8next-fp4-gb300-sglang-agentic-mtp:
     # HiCache rows take the GB300 profile's proportional per-GPU host DRAM allowance (241 GB).
     - dram-utilization: 1.0
       search-space:
-      - { tp: 4, ep: 4, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [3], srt-recipe: agentic.yaml }
-      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [8, 20], srt-recipe: agentic.yaml }
-      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [36, 56, 80], srt-recipe: agentic.yaml }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [1], srt-recipe: agentic.yaml:override_c1 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [2], srt-recipe: agentic.yaml:override_c2 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [8], srt-recipe: agentic.yaml:override_c8 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [20], srt-recipe: agentic.yaml:override_c20 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [36], srt-recipe: agentic.yaml:override_c36 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [56], srt-recipe: agentic-top.yaml:override_c56 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [128], srt-recipe: agentic-top.yaml:override_c128 }
 
 musespark-fp4-gb300-sglang-agentic-dflash:
   image: lmsysorg/sglang:nightly-dev-cu13-20261030-302b78cc
