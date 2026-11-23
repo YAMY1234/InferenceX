@@ -7389,7 +7389,9 @@ qwen3.8next-fp4-gb300-sglang-agentic-mtp:
       - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [8], srt-recipe: agentic.yaml:override_c8 }
       - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [20], srt-recipe: agentic.yaml:override_c20 }
       - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [36], srt-recipe: agentic.yaml:override_c36 }
-      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [56], srt-recipe: agentic-top.yaml:override_c56 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [40], srt-recipe: agentic.yaml:override_c40 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [64], srt-recipe: agentic-top.yaml:override_c64 }
+      - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [72], srt-recipe: agentic-top.yaml:override_c72 }
       - { tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [128], srt-recipe: agentic-top.yaml:override_c128 }
 
 musespark-fp4-gb300-sglang-agentic-dflash:

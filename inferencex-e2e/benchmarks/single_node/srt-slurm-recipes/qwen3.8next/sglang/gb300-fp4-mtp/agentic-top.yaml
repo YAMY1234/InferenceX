@@ -1,6 +1,7 @@
 # Qwen3.8-Flash-Next NVFP4 on GB300, SGLang qwen38-fn-rubin@a89019e (high concurrency).
 # One TP1 worker per point; MTP 3 steps; FP8 E4M3 KV on GPU and host; HiCache 241 GB per GPU;
-# the prompt is cached on finish (strip-thinking-cache).
+# the prompt is cached on finish (strip-thinking-cache). Concurrency 64 and 72 run the QSA union prefill with one K
+# and one V ring stage (SGLANG_QSA_UNION_PREFILL_STAGES_K/V=1), which fits SM103's 227 KB of shared memory.
 base:
   schema: 2
   name: qwen3.8next-fp4-gb300-sglang-agentic-mtp-top
@@ -209,12 +210,12 @@ base:
       AIPERF_REQUIRED_SERVER_METRIC_PREFIX: 'sglang:'
       TOTAL_CPU_DRAM_GB: '241'
       KV_OFFLOADING: dram
-override_c56:
+override_c64:
   roles:
     agg:
       args:
-        max-running-requests: 35
-        cuda-graph-max-bs-decode: 40
+        max-running-requests: 40
+        cuda-graph-max-bs-decode: 44
         cuda-graph-bs-decode:
         - 1
         - 2
@@ -238,10 +239,55 @@ override_c56:
         - 32
         - 36
         - 40
+        - 44
         max-mamba-cache-size: 640
+      env:
+        SGLANG_ENABLE_QSA_UNION_PREFILL: '1'
+        SGLANG_QSA_UNION_PREFILL_STAGES_K: '1'
+        SGLANG_QSA_UNION_PREFILL_STAGES_V: '1'
   benchmark:
     env:
-      CONC: '56'
+      CONC: '64'
+override_c72:
+  roles:
+    agg:
+      args:
+        max-running-requests: 48
+        cuda-graph-max-bs-decode: 52
+        cuda-graph-bs-decode:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 20
+        - 24
+        - 28
+        - 32
+        - 36
+        - 40
+        - 44
+        - 48
+        - 52
+        max-mamba-cache-size: 640
+      env:
+        SGLANG_ENABLE_QSA_UNION_PREFILL: '1'
+        SGLANG_QSA_UNION_PREFILL_STAGES_K: '1'
+        SGLANG_QSA_UNION_PREFILL_STAGES_V: '1'
+  benchmark:
+    env:
+      CONC: '72'
 override_c128:
   roles:
     agg:
