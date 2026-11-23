@@ -362,6 +362,7 @@ override_c20:
         - 4
         - 2
         - 1
+        prefill-decode-interval: 100
   benchmark:
     env:
       CONC: '20'
