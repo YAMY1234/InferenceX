@@ -334,7 +334,65 @@ override_c8:
       CONC: '8'
       KV_OFFLOADING: none
       TOTAL_CPU_DRAM_GB: '0'
-override_c20:
+override_c10:
+  roles:
+    agg:
+      args:
+        max-running-requests: 2
+        cuda-graph-max-bs-decode: 8
+        cuda-graph-bs-decode:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        decode-warmup-batch-sizes:
+        - 2
+        - 1
+        prefill-decode-interval: 40
+        enable-hierarchical-cache: null
+        hicache-size: null
+        hicache-io-backend: null
+        hicache-mem-layout: null
+        hicache-write-policy: null
+  benchmark:
+    env:
+      CONC: '10'
+      KV_OFFLOADING: none
+      TOTAL_CPU_DRAM_GB: '0'
+override_c12:
+  roles:
+    agg:
+      args:
+        max-running-requests: 2
+        cuda-graph-max-bs-decode: 8
+        cuda-graph-bs-decode:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        decode-warmup-batch-sizes:
+        - 2
+        - 1
+        prefill-decode-interval: 40
+        enable-hierarchical-cache: null
+        hicache-size: null
+        hicache-io-backend: null
+        hicache-mem-layout: null
+        hicache-write-policy: null
+  benchmark:
+    env:
+      CONC: '12'
+      KV_OFFLOADING: none
+      TOTAL_CPU_DRAM_GB: '0'
+override_c22:
   roles:
     agg:
       args:
@@ -366,7 +424,40 @@ override_c20:
         prefill-decode-interval: 100
   benchmark:
     env:
-      CONC: '20'
+      CONC: '22'
+override_c24:
+  roles:
+    agg:
+      args:
+        max-running-requests: 8
+        cuda-graph-max-bs-decode: 16
+        cuda-graph-bs-decode:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        decode-warmup-batch-sizes:
+        - 8
+        - 6
+        - 4
+        - 2
+        - 1
+        prefill-decode-interval: 100
+  benchmark:
+    env:
+      CONC: '24'
 override_c36:
   roles:
     agg:

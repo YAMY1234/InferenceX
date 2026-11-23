@@ -13304,7 +13304,7 @@
   scenario-type: [agentic-coding]
   description:
     - "Update the image from lmsysorg/sglang:nightly-dev-cu13-20261103-797af717 (sha256:c7c348bc) to lmsysorg/sglang:qwen38-fn-rubin-a89019e (sha256:3b08340e), SGLang a89019e3 on the qwen38-fn-rubin branch (GDN, QSA, MTP and MoE decode kernels; HC fusions; prefill scheduling)."
-    - "Points: TP1 at concurrency 1, 2 and 8 with the KV cache on the GPU; TP1 at concurrency 20, 36 and 40 with BF16 KV and HiCache 224 GB (agentic.yaml); TP1 at concurrency 64, 72 and 128 with FP8 E4M3 KV on GPU and host and HiCache 241 GB (agentic-top.yaml). The TP4 concurrency-3 point is dropped: TP1 at concurrency 1 and 2 reaches a higher interactivity per GPU."
+    - "Points: TP1 at concurrency 1, 2, 8, 10 and 12 with the KV cache on the GPU; TP1 at concurrency 22, 24, 36 and 40 with BF16 KV and HiCache 224 GB (agentic.yaml); TP1 at concurrency 64, 72 and 128 with FP8 E4M3 KV on GPU and host and HiCache 241 GB (agentic-top.yaml). The TP4 concurrency-3 point is dropped: TP1 at concurrency 1 and 2 reaches a higher interactivity per GPU."
     - "GB300-specific: GDN u-cache verify and QSA FP8 pool verify stay off (the image has no SM100 u-cache build; the pool verify kernel needs 328 KB of shared memory, over SM103's 227 KB). The QSA union prefill runs at concurrency 64 and 72 with one K and one V ring stage (SGLANG_QSA_UNION_PREFILL_STAGES_K/V=1), which fits in 227 KB; its default two-stage ring does not."
     - "Draft data types: unchanged. The embedded MTP draft runs from the same checkpoint (modelopt_mixed) with SGLANG_NVFP4_CKPT_FP8_NEXTN_MOE=0, and its KV cache follows the target's (BF16 at concurrency 1-40, FP8 E4M3 at 64-128)."
   pr-link: https://github.com/SemiAnalysisAI/InferenceX/pull/TBD
