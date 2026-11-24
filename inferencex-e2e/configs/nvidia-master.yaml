@@ -8029,7 +8029,14 @@ qwen3.8next-fp4-gb300-dynamo-sglang-agentic-mtp-disagg-colocated:
         kv-offloading: dram
         kv-offload-backend: { name: hicache }
         conc-list: [256]
-        srt-recipe: disagg-colocated-variants.yaml:override_c256-2p2d-prefill-stack-full-fp8host
+        srt-recipe: disagg-colocated-variants.yaml:override_2p2d-prefill-stack-full-fp8host
+        prefill: { num-worker: 2, gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false }
+        decode: { num-worker: 2, gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false }
+      - spec-decoding: mtp
+        kv-offloading: dram
+        kv-offload-backend: { name: hicache }
+        conc-list: [320]
+        srt-recipe: disagg-colocated-variants.yaml:override_2p2d-prefill-stack-full-fp8host
         prefill: { num-worker: 2, gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false }
         decode: { num-worker: 2, gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false }
 

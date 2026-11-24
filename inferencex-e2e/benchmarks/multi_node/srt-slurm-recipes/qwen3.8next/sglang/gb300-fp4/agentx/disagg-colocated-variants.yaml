@@ -274,9 +274,9 @@ override_c160-1p2d-stack-fp8host:
       args:
         max-mamba-cache-size: 416
 
-# 2 prefill + 2 decode workers, TP1 each, on one node (4 GPUs); the full prefill stack.
-override_c256-2p2d-prefill-stack-full-fp8host:
-  name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-c256-2p2d-prefill-stack-full-fp8host
+# 2 prefill + 2 decode workers, TP1 each, on one node (4 GPUs); the full prefill stack. Concurrency 256 and 320.
+override_2p2d-prefill-stack-full-fp8host:
+  name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-2p2d-prefill-stack-full-fp8host
   roles:
     prefill:
       env:
