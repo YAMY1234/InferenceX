@@ -1,10 +1,10 @@
-# Qwen3.8-Flash-Next NVFP4 on GB300, SGLang qwen38-fn-rubin@a89019e (high concurrency).
-# One TP1 worker per point; MTP 3 steps; FP8 E4M3 KV on GPU and host; HiCache 241 GB per GPU;
-# the prompt is cached on finish (strip-thinking-cache). Concurrency 64 and 72 run the QSA union prefill with one K
-# and one V ring stage (SGLANG_QSA_UNION_PREFILL_STAGES_K/V=1), which fits SM103's 227 KB of shared memory.
+# Qwen3.8-Flash-Next NVFP4 on GB300, aggregated TP1 on one GPU with FP8 E4M3 KV on GPU and host and HiCache
+# (241 GB host pool per GPU). The VR200 agg-top recipe with the GB300 changes: hicache-size 241, the GB300 BF16
+# GEMM pins (shipped in the image's sglang/srt/layers/moe/tactic_pins), no FlashInfer MoE tactic pins,
+# SGLANG_POST_VERIFY_MAX_GRAPH_KEYS=64, and the GB300 prefill / HC knobs.
 base:
   schema: 2
-  name: qwen3.8next-fp4-gb300-sglang-agentic-mtp-top
+  name: qwen3.8next-fp4-gb300-sglang-agentx
   identity:
     model:
       revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
@@ -24,8 +24,6 @@ base:
   roles:
     agg:
       nodes: 1
-      workers: 1
-      gpus: 1
       env:
         PYTHONNOUSERSITE: '1'
         PYTHONUNBUFFERED: '1'
@@ -55,28 +53,34 @@ base:
         SGLANG_ENABLE_QSA_PREFILL_SCALE_FOLD: '1'
         SGLANG_ENABLE_QSA_GROUPED4_VERIFY_CHAIN: '1'
         SGLANG_ENABLE_QSA_GROUPED4_DRAFT_EXTEND: '1'
-        SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '1'
         SGLANG_PLB_STREAM_PRIORITY: '-1'
-        SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '1'
-        SGLANG_POST_VERIFY_MAX_GRAPH_KEYS: '512'
+        SGLANG_POST_VERIFY_MAX_GRAPH_KEYS: '64'
         SGLANG_Q35MF_EDGE_SPARSE_VERIFY_SAMPLING: '1'
-        FLASHINFER_TOPK_ALGO: filtered
         SGLANG_ENABLE_MROPE_TEXT_DEVICE_POSITIONS: '1'
         SGLANG_FORWARD_HELPER_STREAM_PRIORITY: '-1'
+        SGLANG_QSA_FP8_POOL_VERIFY: '1'
         SGLANG_QSA_GROUPED4_VERIFY_PIPELINE_STAGES: '2'
         SGLANG_QSA_GROUPED4_VERIFY_CHAIN_CTAS: '128'
         SGLANG_ENABLE_QSA_PREFILL_FAST_SELECT: '1'
         SGLANG_ENABLE_QSA_TMA_PREFILL: '1'
+        SGLANG_ENABLE_QSA_UNION_PREFILL: '1'
         SGLANG_ENABLE_QSA_PREFILL_HOST_PATH: '1'
         SGLANG_PERFPF_SPF_AGE_ROUNDS: '3'
         SGLANG_PERFPF_SPF_AGE_CAP: '1'
         SGLANG_PERFPF_SPF_CHUNK_MIN_PCT: '100'
+        SGLANG_BF16_GEMM_PIN_FILE: qwen38next_bf16_gb300_gemm_pins.json.py
         SGLANG_Q38C_EXTEND_FASTPATH: '1'
         SGLANG_X_HC_EXTEND_MIN_ROWS: '33'
         SGLANG_HC_MIX_SPLITK_MAX_ROWS: '512'
         SGLANG_FUSED_QK_NORM_ROPE_ROWS: '1'
         SGLANG_QSA_PREFILL_SCORER_TC: '1'
         SGLANG_QSA_PREFILL_PACK_ROWS: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FP16_KEY_RING: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FRONT: '1'
+        SGLANG_ENABLE_GDN_UCACHE_STRIDED_QKV: '1'
+        SGLANG_ENABLE_GDN_UCACHE_PDL: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FLUSH_FIRST: '1'
+        SGLANG_ENABLE_GDN_UCACHE_REQUEST_RINGS: '1'
         SGLANG_QSA_VERIFY_TOPK: sampled
         SGLANG_QSA_FP8_POOL_VERIFY_UNION_WARPS: '16'
         SGLANG_QSA_FP8_POOL_VERIFY_WS: '1'
@@ -90,12 +94,13 @@ base:
         SGLANG_HICACHE_MAMBA_LOAD_BLOCK_QUOTA: '8'
         SGLANG_HICACHE_BLOCK_QUOTA: '8'
         SGLANG_PLE_FUSED_EXTEND_CONV: '1'
-        SGLANG_QSA_PREFILL_FAST_SELECT_WIDE_LOGITS_MB: '256'
+        SGLANG_QSA_PREFILL_FAST_SELECT_WIDE_LOGITS_MB: '512'
         SGLANG_QSA_PREFILL_FAST_SELECT_TOPK: onepass
         SGLANG_GDN_PREFILL_CONV_RETILE: '1'
         SGLANG_ENABLE_Q38_FUSED_ROUTING: '1'
         SGLANG_Q38_FUSED_ROUTING_MAX_ROWS: '512'
         SGLANG_PERFPF_SPF_MATCH_EVERY: '4'
+        SGLANG_ENABLE_GDN_UCACHE_FUSED_NORM: '1'
         SGLANG_ENABLE_GDN_PREFILL_FUSED_STATE_COPY: '1'
         SGLANG_ENABLE_GDN_PREFILL_FUSED_TRACK: '1'
         SGLANG_QWEN_MOE_SHARED_NO_CLONE: '1'
@@ -110,6 +115,15 @@ base:
         SGLANG_ENABLE_QSA_MTP_CAPTURE_BATCHED: '1'
         SGLANG_ENABLE_Q38_PLE_VERIFY_PREPARE_BATCHED: '1'
         SGLANG_HICACHE_BATCH_COPY_THRESHOLD: '4096'
+        SGLANG_ENABLE_GDN_PREFILL_SPARSE_CHECKPOINTS: '1'
+        SGLANG_ENABLE_GDN_PREFILL_CP_SPLIT: '1'
+        SGLANG_GDN_PREFILL_CP_SPLIT_MIN_LEN: '8192'
+        SGLANG_QSA_UNION_PREFILL_CPASYNC: '1'
+        SGLANG_QSA_TOPK_ONEPASS_CTAS_PER_SM: '4'
+        SGLANG_QSA_TOPK_ONEPASS_UNROLL: '2'
+        SGLANG_HC_UP_GATE_TC_MIN_ROWS: '2048'
+        SGLANG_HC_MIX_WIDE_SM103_SPLIT2: '1'
+        SGLANG_PLE_PINNED_HUGEPAGE: '1'
       args:
         served-model-name: nvidia/Qwen3.8-Flash-Next-NVFP4
         trust-remote-code: true
@@ -120,7 +134,7 @@ base:
         linear-attn-prefill-backend: flashinfer
         linear-attn-decode-backend: flashinfer
         linear-attn-verify-backend: triton
-        mamba-ssm-dtype: bfloat16
+        mamba-ssm-dtype: float16
         mamba-radix-cache-strategy: extra_buffer_lazy
         mamba-track-interval: 262144
         mamba-max-states-per-path: 1
@@ -137,47 +151,11 @@ base:
         speculative-eagle-topk: 1
         speculative-num-draft-tokens: 4
         speculative-moe-runner-backend: flashinfer_trtllm
+        enable-gdn-replayssm-ucache: true
         cuda-graph-backend-prefill: breakable
         cuda-graph-backend-decode: full
         cuda-graph-max-bs-decode: 128
-        cuda-graph-bs-decode:
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
-        - 16
-        - 20
-        - 24
-        - 28
-        - 32
-        - 36
-        - 40
-        - 44
-        - 48
-        - 52
-        - 56
-        - 60
-        - 64
-        - 68
-        - 72
-        - 80
-        - 88
-        - 96
-        - 104
-        - 112
-        - 120
-        - 128
+        cuda-graph-bs-decode: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 80, 88, 96, 104, 112, 120, 128]
         kv-cache-dtype: fp8_e4m3
         speculative-draft-kv-cache-dtype: fp8_e4m3
         enable-hierarchical-cache: true
@@ -194,11 +172,8 @@ base:
         stream-interval: 20
         decode-log-interval: 10
         watchdog-timeout: 1800
-        max-mamba-cache-size: 640
-        prefill-decode-interval: 30
         revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
         speculative-draft-model-revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
-        enable-linear-replayssm-spec: true
   sbatch_directives:
     mem: '0'
     exclusive: ''
@@ -208,131 +183,95 @@ base:
   benchmark:
     env:
       AIPERF_REQUIRED_SERVER_METRIC_PREFIX: 'sglang:'
-      TOTAL_CPU_DRAM_GB: '241'
       KV_OFFLOADING: dram
-override_c64:
+
+# Concurrency 128: the full top stack, 30 decode rounds between prefills.
+override_c128-top-full-fp8h-pdi30:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c128-top-full-fp8h-pdi30
   roles:
     agg:
-      args:
-        max-running-requests: 40
-        cuda-graph-max-bs-decode: 44
-        cuda-graph-bs-decode:
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
-        - 16
-        - 20
-        - 24
-        - 28
-        - 32
-        - 36
-        - 40
-        - 44
-        max-mamba-cache-size: 640
       env:
-        SGLANG_ENABLE_QSA_UNION_PREFILL: '1'
-        SGLANG_QSA_UNION_PREFILL_STAGES_K: '1'
-        SGLANG_QSA_UNION_PREFILL_STAGES_V: '1'
-  benchmark:
-    env:
-      CONC: '64'
-override_c72:
-  roles:
-    agg:
+        SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '1'
+        SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FUSED_CONV: '1'
+        FLASHINFER_TOPK_ALGO: default
       args:
-        max-running-requests: 48
-        cuda-graph-max-bs-decode: 52
-        cuda-graph-bs-decode:
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
-        - 16
-        - 20
-        - 24
-        - 28
-        - 32
-        - 36
-        - 40
-        - 44
-        - 48
-        - 52
         max-mamba-cache-size: 640
-      env:
-        SGLANG_ENABLE_QSA_UNION_PREFILL: '1'
-        SGLANG_QSA_UNION_PREFILL_STAGES_K: '1'
-        SGLANG_QSA_UNION_PREFILL_STAGES_V: '1'
-  benchmark:
-    env:
-      CONC: '72'
-override_c128:
-  roles:
-    agg:
-      args:
-        max-running-requests: 128
-        cuda-graph-max-bs-decode: 128
-        cuda-graph-bs-decode:
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
-        - 15
-        - 16
-        - 20
-        - 24
-        - 28
-        - 32
-        - 36
-        - 40
-        - 44
-        - 48
-        - 52
-        - 56
-        - 60
-        - 64
-        - 68
-        - 72
-        - 80
-        - 88
-        - 96
-        - 104
-        - 112
-        - 120
-        - 128
-        max-mamba-cache-size: 640
+        prefill-decode-interval: 30
   benchmark:
     env:
       CONC: '128'
+
+# Concurrency 144: host-only Mamba checkpoints, 78 GB of the host pool pinned to Mamba states, 24 decode rounds
+# between prefills from 40 running requests; post-verify CUDA graph off.
+override_c144-top-hostckpt-fp8host-mamba78-pdi24-mbs40-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c144-top-hostckpt-fp8host-mamba78-pdi24-mbs40-nopv
+  roles:
+    agg:
+      env:
+        SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
+        SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
+        SGLANG_OPT_MAMBA_HOST_ONLY_CHECKPOINT: '1'
+        SGLANG_HICACHE_MAMBA_SIZE_GB: '78'
+        SGLANG_OPT_MAMBA_HOST_ONLY_CONCURRENT_FETCH: '1'
+        SGLANG_OPT_HICACHE_PINNED_INDEX_H2D: '1'
+        SGLANG_ENABLE_QSA_DRAFT_EXTEND_UNION: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FUSED_CONV: '1'
+        SGLANG_ENABLE_SM107_BF16_SMALLM_ROUTES: '1'
+        SGLANG_SPEC_ROW_ARGMAX: '1'
+        SGLANG_MOE_FINALIZE_GATE_COLUMN_CHUNK: '1024'
+        SGLANG_MOE_FINALIZE_GATE_COLUMN_CHUNK_MAX_TOKENS: '384'
+        SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
+      args:
+        max-mamba-cache-size: 320
+        prefill-decode-interval: 24
+        prefill-decode-interval-min-bs: 40
+  benchmark:
+    env:
+      CONC: '144'
+
+# Concurrency 160: host-only Mamba checkpoints, 78 GB Mamba host share, 21 decode rounds between prefills from
+# 44 running requests; post-verify CUDA graph off.
+override_c160-top-hostckpt-fp8host-mamba78-pdi21-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c160-top-hostckpt-fp8host-mamba78-pdi21-nopv
+  roles:
+    agg:
+      env: &c160_env
+        SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
+        SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
+        SGLANG_QSA_FP8_POOL_VERIFY_WS_SPLITS: '2'
+        SGLANG_QSA_FP8_POOL_VERIFY_WS_PDL: '1'
+        SGLANG_OPT_MAMBA_HOST_ONLY_CHECKPOINT: '1'
+        SGLANG_HICACHE_MAMBA_SIZE_GB: '78'
+        SGLANG_OPT_MAMBA_HOST_ONLY_CONCURRENT_FETCH: '1'
+        SGLANG_PLE_FUSED_EXTEND_CONV_CUDNN_SHAPES: '1'
+        SGLANG_OPT_HICACHE_PINNED_INDEX_H2D: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FUSED_CONV: '0'
+        SGLANG_SPEC_ROW_ARGMAX: '1'
+        SGLANG_PLE_FUSED_VERIFY_CONV: '1'
+        SGLANG_QSA_FUSED_FP8_KV_WRITE: '1'
+        SGLANG_ENABLE_QSA_DRAFT_EXTEND_UNION: '1'
+        SGLANG_PLE_GATHER_ROWS: '32'
+        SGLANG_PLE_GATHER_PROGRAMS: '64'
+        FLASHINFER_TOPK_ALGO: default
+      args:
+        max-mamba-cache-size: 320
+        prefill-decode-interval: 21
+        prefill-decode-interval-min-bs: 44
+  benchmark:
+    env:
+      CONC: '160'
+
+# Concurrency 160: as above with 15 decode rounds between prefills.
+override_c160-top-hostckpt-fp8host-mamba78-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c160-top-hostckpt-fp8host-mamba78-nopv
+  roles:
+    agg:
+      env: *c160_env
+      args:
+        max-mamba-cache-size: 320
+        prefill-decode-interval: 15
+        prefill-decode-interval-min-bs: 44
+  benchmark:
+    env:
+      CONC: '160'
