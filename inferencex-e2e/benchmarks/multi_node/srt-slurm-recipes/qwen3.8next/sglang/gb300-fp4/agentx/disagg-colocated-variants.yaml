@@ -283,8 +283,8 @@ base:
 
 # 1 prefill + 2 decode workers, TP1 each, on one node (3 GPUs); the full prefill stack. The decode workers take the
 # node's highest free GPUs.
-override_c176-1p2d-prefill-stack-full-fp8host:
-  name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-c176-1p2d-prefill-stack-full-fp8host
+override_1p2d-prefill-stack-full-fp8host:
+  name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-1p2d-prefill-stack-full-fp8host
   resources:
     spread_workers: true
   roles:
@@ -296,7 +296,7 @@ override_c176-1p2d-prefill-stack-full-fp8host:
       args:
         max-mamba-cache-size: 416
 
-# 2 prefill + 2 decode workers, TP1 each, on one node (4 GPUs); the full prefill stack. Concurrency 256 and 320.
+# 2 prefill + 2 decode workers, TP1 each, on one node (4 GPUs); the full prefill stack.
 override_2p2d-prefill-stack-full-fp8host:
   name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-2p2d-prefill-stack-full-fp8host
   roles:

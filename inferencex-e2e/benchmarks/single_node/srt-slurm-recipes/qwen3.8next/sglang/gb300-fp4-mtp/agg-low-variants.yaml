@@ -215,8 +215,6 @@ base:
         stream-interval: 20
         decode-log-interval: 10
         watchdog-timeout: 1800
-        max-running-requests: 2
-        decode-warmup-batch-sizes: [2, 1]
   sbatch_directives:
     mem: '0'
     exclusive: ''
@@ -228,41 +226,62 @@ base:
       AIPERF_REQUIRED_SERVER_METRIC_PREFIX: 'sglang:'
       KV_OFFLOADING: none
 
-# Concurrency 2: two requests decode, KV cache on the GPU.
+# Concurrency 2: running cap 2, 160 decode rounds between prefills.
 override_c2-cap2:
   name: qwen3.8next-fp4-gb300-sglang-agentx-c2-cap2
   roles:
     agg:
       args:
+        max-running-requests: 2
         cuda-graph-max-bs-decode: 4
         cuda-graph-bs-decode: [1, 2, 3, 4]
         prefill-decode-interval: 160
+        decode-warmup-batch-sizes: [2, 1]
   benchmark:
     env:
       CONC: '2'
 
-# Concurrency 10: running cap 2; 40 decode rounds between prefills.
+# Concurrency 4: running cap 4 (no queueing), 8 decode rounds between prefills.
+override_c4-cap4-pdi8:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c4-cap4-pdi8
+  roles:
+    agg:
+      args:
+        max-running-requests: 4
+        cuda-graph-max-bs-decode: 8
+        cuda-graph-bs-decode: [1, 2, 3, 4, 5, 6, 7, 8]
+        prefill-decode-interval: 8
+        decode-warmup-batch-sizes: [4, 3, 2, 1]
+  benchmark:
+    env:
+      CONC: '4'
+
+# Concurrency 10: running cap 2, 40 decode rounds between prefills.
 override_c10-cap2-pdi40:
   name: qwen3.8next-fp4-gb300-sglang-agentx-c10-cap2-pdi40
   roles:
     agg:
       args:
+        max-running-requests: 2
         cuda-graph-max-bs-decode: 8
         cuda-graph-bs-decode: [1, 2, 3, 4, 5, 6, 7, 8]
         prefill-decode-interval: 40
+        decode-warmup-batch-sizes: [2, 1]
   benchmark:
     env:
       CONC: '10'
 
-# Concurrency 12: running cap 2; 40 decode rounds between prefills.
-override_c12-cap2-pdi40:
-  name: qwen3.8next-fp4-gb300-sglang-agentx-c12-cap2-pdi40
+# Concurrency 10: running cap 10 (no queueing), 8 decode rounds between prefills.
+override_c10-cap10-pdi8:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c10-cap10-pdi8
   roles:
     agg:
       args:
-        cuda-graph-max-bs-decode: 8
-        cuda-graph-bs-decode: [1, 2, 3, 4, 5, 6, 7, 8]
-        prefill-decode-interval: 40
+        max-running-requests: 10
+        cuda-graph-max-bs-decode: 12
+        cuda-graph-bs-decode: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        prefill-decode-interval: 8
+        decode-warmup-batch-sizes: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
   benchmark:
     env:
-      CONC: '12'
+      CONC: '10'
