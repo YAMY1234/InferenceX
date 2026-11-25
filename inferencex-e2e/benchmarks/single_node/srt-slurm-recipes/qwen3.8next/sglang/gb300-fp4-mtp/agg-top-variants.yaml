@@ -50,7 +50,6 @@ base:
         SGLANG_ENABLE_QSA_GROUPED4_VERIFY: '1'
         SGLANG_QSA_GROUPED4_VERIFY_CTAS: '256'
         SGLANG_QSA_DECODE_CTAS_PER_ROW_LEVELS: 1,256
-        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '16384'
         SGLANG_ENABLE_QWEN_MOE_PREFILL_AUTOTUNE: '1'
         SGLANG_CAUSAL_CONV1D_FWD_CONFIG: 8,256,2,2
         SGLANG_ENABLE_QSA_PREFILL_SCALE_FOLD: '1'
@@ -144,9 +143,7 @@ base:
         mem-fraction-static: 0.89
         max-running-requests: 128
         page-size: 64
-        chunked-prefill-size: 16384
         schedule-policy: shortest-prefill-first
-        max-prefill-tokens: 16384
         moe-runner-backend: flashinfer_trtllm
         disable-shared-experts-fusion: true
         speculative-algorithm: NEXTN
@@ -195,11 +192,14 @@ override_c128-top-full-fp8h-pdi30:
   roles:
     agg:
       env:
+        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '16384'
         SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '1'
         SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '1'
         SGLANG_ENABLE_GDN_UCACHE_FUSED_CONV: '1'
         FLASHINFER_TOPK_ALGO: default
       args:
+        chunked-prefill-size: 16384
+        max-prefill-tokens: 16384
         max-mamba-cache-size: 640
         prefill-decode-interval: 30
   benchmark:
@@ -213,6 +213,7 @@ override_c144-top-hostckpt-fp8host-mamba40-pdi24-mbs40-nopv:
   roles:
     agg:
       env:
+        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '16384'
         SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
         SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
         SGLANG_OPT_MAMBA_HOST_ONLY_CHECKPOINT: '1'
@@ -227,6 +228,8 @@ override_c144-top-hostckpt-fp8host-mamba40-pdi24-mbs40-nopv:
         SGLANG_MOE_FINALIZE_GATE_COLUMN_CHUNK_MAX_TOKENS: '384'
         SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
       args:
+        chunked-prefill-size: 16384
+        max-prefill-tokens: 16384
         max-mamba-cache-size: 320
         prefill-decode-interval: 24
         prefill-decode-interval-min-bs: 40
@@ -241,6 +244,7 @@ override_c160-top-hostckpt-fp8host-mamba48-pdi21-nopv:
   roles:
     agg:
       env: &c160_env
+        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '16384'
         SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
         SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
         SGLANG_QSA_FP8_POOL_VERIFY_WS_SPLITS: '2'
@@ -259,6 +263,8 @@ override_c160-top-hostckpt-fp8host-mamba48-pdi21-nopv:
         SGLANG_PLE_GATHER_PROGRAMS: '64'
         FLASHINFER_TOPK_ALGO: default
       args:
+        chunked-prefill-size: 16384
+        max-prefill-tokens: 16384
         max-mamba-cache-size: 320
         prefill-decode-interval: 21
         prefill-decode-interval-min-bs: 44
@@ -273,9 +279,51 @@ override_c192-top-hostckpt-fp8host-mamba48-pdi15-nopv:
     agg:
       env: *c160_env
       args:
+        chunked-prefill-size: 16384
+        max-prefill-tokens: 16384
         max-mamba-cache-size: 320
         prefill-decode-interval: 15
         prefill-decode-interval-min-bs: 44
+  benchmark:
+    env:
+      CONC: '192'
+
+# Concurrency 192 with 24576-token prefill chunks, up to 16 requests per prefill batch, the fused GDN prefill
+# alpha and device-ordered HiCache load-back / write-back.
+override_c192-top-hostckpt-fp8host-mamba48-pdi15-pf24k-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c192-top-hostckpt-fp8host-mamba48-pdi15-pf24k-nopv
+  roles:
+    agg:
+      env:
+        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '24576'
+        SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
+        SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
+        SGLANG_QSA_FP8_POOL_VERIFY_WS_SPLITS: '2'
+        SGLANG_QSA_FP8_POOL_VERIFY_WS_PDL: '1'
+        SGLANG_OPT_MAMBA_HOST_ONLY_CHECKPOINT: '1'
+        SGLANG_HICACHE_MAMBA_SIZE_GB: '48'
+        SGLANG_OPT_MAMBA_HOST_ONLY_CONCURRENT_FETCH: '1'
+        SGLANG_PLE_FUSED_EXTEND_CONV_CUDNN_SHAPES: '1'
+        SGLANG_OPT_HICACHE_PINNED_INDEX_H2D: '1'
+        SGLANG_ENABLE_GDN_UCACHE_FUSED_CONV: '0'
+        SGLANG_SPEC_ROW_ARGMAX: '1'
+        SGLANG_PLE_FUSED_VERIFY_CONV: '1'
+        SGLANG_QSA_FUSED_FP8_KV_WRITE: '1'
+        SGLANG_ENABLE_QSA_DRAFT_EXTEND_UNION: '1'
+        SGLANG_PLE_GATHER_ROWS: '32'
+        SGLANG_PLE_GATHER_PROGRAMS: '64'
+        FLASHINFER_TOPK_ALGO: default
+        SGLANG_GDN_PREFILL_ALPHA_FUSED: '1'
+        SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
+        SGLANG_HICACHE_LOAD_BACK_DEVICE_ORDERED: '1'
+        SGLANG_HICACHE_WRITE_BACK_DEVICE_ORDERED: '1'
+      args:
+        chunked-prefill-size: 24576
+        max-prefill-tokens: 24576
+        max-mamba-cache-size: 320
+        prefill-decode-interval: 15
+        prefill-decode-interval-min-bs: 44
+        prefill-max-requests: 16
   benchmark:
     env:
       CONC: '192'

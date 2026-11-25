@@ -107,6 +107,7 @@ base:
         SGLANG_GDN_PREFILL_ALPHA_FUSED: '1'
         SGLANG_QSA_PREFILL_FAST_SELECT_TOPK: onepass
         SGLANG_GDN_PREFILL_CONV_RETILE: '1'
+        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '32768'
         SGLANG_ENABLE_GDN_PREFILL_SPARSE_CHECKPOINTS: '1'
         SGLANG_ENABLE_GDN_PREFILL_CP_SPLIT: '1'
         SGLANG_GDN_PREFILL_CP_SPLIT_MIN_LEN: '8192'
@@ -116,6 +117,17 @@ base:
         SGLANG_HC_UP_GATE_TC_MIN_ROWS: '2048'
         SGLANG_HC_MIX_WIDE_SM103_SPLIT2: '1'
         FLASHINFER_TOPK_ALGO: default
+        SGLANG_PLE_FUSED_EXTEND_CONV_CUDNN_SHAPES: '1'
+        SGLANG_ENABLE_GDN_PREFILL_FUSED_STATE_COPY: '1'
+        SGLANG_ENABLE_GDN_PREFILL_FUSED_TRACK: '1'
+        SGLANG_QWEN_MOE_SHARED_NO_CLONE: '1'
+        SGLANG_QSA_UNION_PREFILL_OUT_ALIAS: '1'
+        SGLANG_QSA_PREFILL_TOPK_BRIDGE_DIRECT: '1'
+        SGLANG_PLE_PREFILL_FUSED_GATE: '1'
+        SGLANG_HICACHE_GROUPED_DEVICE_FREES: '1'
+        SGLANG_HICACHE_BATCH_COPY_THRESHOLD: '4096'
+        SGLANG_HICACHE_LOAD_BACK_DEVICE_ORDERED: '1'
+        SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
       args:
         freeze-gc-after-startup: true
         served-model-name: nvidia/Qwen3.8-Flash-Next-NVFP4
@@ -150,7 +162,10 @@ base:
         enable-cache-report: true
         reasoning-parser: auto
         watchdog-timeout: 1800
+        chunked-prefill-size: 32768
+        max-prefill-tokens: 32768
         revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
+        prefill-max-requests: 16
     decode:
       nodes: colocate
       env:
@@ -216,6 +231,12 @@ base:
         SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
         SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
         FLASHINFER_TOPK_ALGO: default
+        SGLANG_ENABLE_QSA_DRAFT_EXTEND_UNION: '1'
+        SGLANG_QSA_FP8_POOL_VERIFY_WS_SPLITS: '2'
+        SGLANG_QSA_FP8_POOL_VERIFY_WS_PDL: '1'
+        SGLANG_PLE_GATHER_ROWS: '32'
+        SGLANG_PLE_GATHER_PROGRAMS: '64'
+        SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
       args:
         disaggregation-decode-late-cuda-context: true
         disaggregation-nosync-qsa-publish: true
@@ -260,19 +281,16 @@ base:
         revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
         speculative-draft-model-revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
 
-# 1 prefill + 2 decode workers, TP1 each, on one node (3 GPUs); the decode workers take the node's highest free GPUs.
-override_c160-1p2d-stack-fp8host:
-  name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-c160-1p2d-stack-fp8host
+# 1 prefill + 2 decode workers, TP1 each, on one node (3 GPUs); the full prefill stack. The decode workers take the
+# node's highest free GPUs.
+override_c176-1p2d-prefill-stack-full-fp8host:
+  name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-c176-1p2d-prefill-stack-full-fp8host
   resources:
     spread_workers: true
   roles:
     prefill:
-      env:
-        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '16384'
       args:
         hicache-size: 165
-        chunked-prefill-size: 16384
-        max-prefill-tokens: 16384
         weight-loader-drop-cache-after-load: true
     decode:
       args:
@@ -283,31 +301,8 @@ override_2p2d-prefill-stack-full-fp8host:
   name: qwen3.8next-fp4-gb300-dynamo-sglang-agentx-2p2d-prefill-stack-full-fp8host
   roles:
     prefill:
-      env:
-        SGLANG_PLE_FUSED_EXTEND_CONV_CUDNN_SHAPES: '1'
-        SGLANG_ENABLE_GDN_PREFILL_FUSED_STATE_COPY: '1'
-        SGLANG_ENABLE_GDN_PREFILL_FUSED_TRACK: '1'
-        SGLANG_QWEN_MOE_SHARED_NO_CLONE: '1'
-        SGLANG_QSA_UNION_PREFILL_OUT_ALIAS: '1'
-        SGLANG_QSA_PREFILL_TOPK_BRIDGE_DIRECT: '1'
-        SGLANG_PLE_PREFILL_FUSED_GATE: '1'
-        SGLANG_HICACHE_GROUPED_DEVICE_FREES: '1'
-        SGLANG_HICACHE_BATCH_COPY_THRESHOLD: '4096'
-        SGLANG_HICACHE_LOAD_BACK_DEVICE_ORDERED: '1'
-        SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
-        SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '32768'
       args:
         hicache-size: 150
-        chunked-prefill-size: 32768
-        max-prefill-tokens: 32768
-        prefill-max-requests: 16
     decode:
-      env:
-        SGLANG_ENABLE_QSA_DRAFT_EXTEND_UNION: '1'
-        SGLANG_QSA_FP8_POOL_VERIFY_WS_SPLITS: '2'
-        SGLANG_QSA_FP8_POOL_VERIFY_WS_PDL: '1'
-        SGLANG_PLE_GATHER_ROWS: '32'
-        SGLANG_PLE_GATHER_PROGRAMS: '64'
-        SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
       args:
         max-mamba-cache-size: 104

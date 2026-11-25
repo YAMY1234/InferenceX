@@ -8001,6 +8001,7 @@ qwen3.8next-fp4-gb300-sglang-agentic-mtp:
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [144], srt-recipe: agg-top-variants.yaml:override_c144-top-hostckpt-fp8host-mamba40-pdi24-mbs40-nopv }
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [160], srt-recipe: agg-top-variants.yaml:override_c160-top-hostckpt-fp8host-mamba48-pdi21-nopv }
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [192], srt-recipe: agg-top-variants.yaml:override_c192-top-hostckpt-fp8host-mamba48-pdi15-nopv }
+      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [192], srt-recipe: agg-top-variants.yaml:override_c192-top-hostckpt-fp8host-mamba48-pdi15-pf24k-nopv }
 
 qwen3.8next-fp4-gb300-dynamo-sglang-agentic-mtp-disagg-colocated:
   image: lmsysorg/sglang:qwen38-fn-gb300-bbbe528@sha256:ccf5f31ca191ec2c110b1f2050905e184f647c4889c21986097818c45da9cfa8
@@ -8021,8 +8022,8 @@ qwen3.8next-fp4-gb300-dynamo-sglang-agentic-mtp-disagg-colocated:
       - spec-decoding: mtp
         kv-offloading: dram
         kv-offload-backend: { name: hicache }
-        conc-list: [160]
-        srt-recipe: disagg-colocated-variants.yaml:override_c160-1p2d-stack-fp8host
+        conc-list: [176]
+        srt-recipe: disagg-colocated-variants.yaml:override_c176-1p2d-prefill-stack-full-fp8host
         prefill: { num-worker: 1, gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false }
         decode: { num-worker: 2, gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false }
       - spec-decoding: mtp
