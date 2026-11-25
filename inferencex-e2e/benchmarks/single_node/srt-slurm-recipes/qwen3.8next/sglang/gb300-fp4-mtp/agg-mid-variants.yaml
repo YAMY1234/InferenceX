@@ -1,6 +1,9 @@
-# Qwen3.8-Flash-Next NVFP4 on GB300, aggregated TP1 on one GPU with BF16 KV and HiCache (241 GB host pool per GPU).
-# The VR200 agg-mid recipe with the GB300 changes: hicache-size 241, no FlashInfer MoE tactic pins,
+# Qwen3.8-Flash-Next NVFP4 on GB300, aggregated TP1 on one GPU with BF16 KV and HiCache (150 GB host pool).
+# The VR200 agg-mid recipe with the GB300 changes: hicache-size 150, no FlashInfer MoE tactic pins,
 # FLASHINFER_TOPK_ALGO=default, SGLANG_POST_VERIFY_MAX_GRAPH_KEYS=64, and the GB300 prefill / HC knobs.
+# HiCache sizes fit InferenceX's per-worker host memory limit on gb300-nv (230000 MiB per TP1 worker): the
+# pinned per-layer embedding table (47.7 GiB), the host KV / Mamba pools and the process. 165 GB is the most that
+# fits; at 170 SGLang's own host-memory check fails.
 base:
   schema: 2
   name: qwen3.8next-fp4-gb300-sglang-agentx
@@ -219,7 +222,7 @@ base:
         kv-cache-dtype: bfloat16
         speculative-draft-kv-cache-dtype: bfloat16
         enable-hierarchical-cache: true
-        hicache-size: 241
+        hicache-size: 150
         hicache-io-backend: kernel
         hicache-mem-layout: page_first
         hicache-write-policy: write_back

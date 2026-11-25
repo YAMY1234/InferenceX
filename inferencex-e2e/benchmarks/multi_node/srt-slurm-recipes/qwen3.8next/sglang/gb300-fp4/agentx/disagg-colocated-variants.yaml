@@ -1,8 +1,11 @@
 # Qwen3.8-Flash-Next NVFP4 on GB300: TP1 prefill and TP1 decode workers colocated on one 4-GPU node, Dynamo KV
-# router, Mooncake KV transfer, HiCache on the prefill workers (241 GB host pool per prefill GPU).
-# The VR200 disagg-colocated recipe with the GB300 changes: hicache-size 241, the GB300 BF16 GEMM pins, no
+# router, Mooncake KV transfer, HiCache on the prefill workers (165 GB host pool at 1P2D, 150 GB at 2P2D).
+# The VR200 disagg-colocated recipe with the GB300 changes: smaller hicache-size, the GB300 BF16 GEMM pins, no
 # FlashInfer MoE tactic pins or Rubin CuTe MoE prefill, FLASHINFER_TOPK_ALGO=default, decode post-verify CUDA
 # graph and late join off, and the GB300 prefill / HC knobs.
+# HiCache sizes fit InferenceX's per-worker host memory limit on gb300-nv (230000 MiB per TP1 worker): the
+# pinned per-layer embedding table (47.7 GiB), the host KV / Mamba pools and the process. 165 GB is the most that
+# fits; at 170 SGLang's own host-memory check fails.
 schema: 2
 
 base:
@@ -138,7 +141,6 @@ base:
         cuda-graph-backend-prefill: breakable
         kv-cache-dtype: fp8_e4m3
         enable-hierarchical-cache: true
-        hicache-size: 241
         hicache-io-backend: kernel
         hicache-mem-layout: page_first
         hicache-write-policy: write_back
@@ -268,8 +270,10 @@ override_c160-1p2d-stack-fp8host:
       env:
         SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '16384'
       args:
+        hicache-size: 165
         chunked-prefill-size: 16384
         max-prefill-tokens: 16384
+        weight-loader-drop-cache-after-load: true
     decode:
       args:
         max-mamba-cache-size: 416
@@ -293,6 +297,7 @@ override_2p2d-prefill-stack-full-fp8host:
         SGLANG_GDN_PREFILL_SYNC_FREE_METADATA: '1'
         SGLANG_QWEN_MOE_FUSED_FINALIZE_GATE_MAX_TOKENS: '32768'
       args:
+        hicache-size: 150
         chunked-prefill-size: 32768
         max-prefill-tokens: 32768
         prefill-max-requests: 16

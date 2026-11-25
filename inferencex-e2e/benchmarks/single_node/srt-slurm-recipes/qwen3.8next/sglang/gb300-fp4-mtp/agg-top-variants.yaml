@@ -1,7 +1,10 @@
 # Qwen3.8-Flash-Next NVFP4 on GB300, aggregated TP1 on one GPU with FP8 E4M3 KV on GPU and host and HiCache
-# (241 GB host pool per GPU). The VR200 agg-top recipe with the GB300 changes: hicache-size 241, the GB300 BF16
+# (165 GB host pool). The VR200 agg-top recipe with the GB300 changes: hicache-size 165, the GB300 BF16
 # GEMM pins (shipped in the image's sglang/srt/layers/moe/tactic_pins), no FlashInfer MoE tactic pins,
 # SGLANG_POST_VERIFY_MAX_GRAPH_KEYS=64, and the GB300 prefill / HC knobs.
+# HiCache sizes fit InferenceX's per-worker host memory limit on gb300-nv (230000 MiB per TP1 worker): the
+# pinned per-layer embedding table (47.7 GiB), the host KV / Mamba pools and the process. 165 GB is the most that
+# fits; at 170 SGLang's own host-memory check fails.
 base:
   schema: 2
   name: qwen3.8next-fp4-gb300-sglang-agentx
@@ -159,7 +162,7 @@ base:
         kv-cache-dtype: fp8_e4m3
         speculative-draft-kv-cache-dtype: fp8_e4m3
         enable-hierarchical-cache: true
-        hicache-size: 241
+        hicache-size: 165
         hicache-io-backend: kernel
         hicache-mem-layout: page_first
         hicache-write-policy: write_back
@@ -174,6 +177,7 @@ base:
         watchdog-timeout: 1800
         revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
         speculative-draft-model-revision: fc694b54fb0174e0913e6adf86691ef85a4ead47
+        weight-loader-drop-cache-after-load: true
   sbatch_directives:
     mem: '0'
     exclusive: ''
@@ -202,17 +206,17 @@ override_c128-top-full-fp8h-pdi30:
     env:
       CONC: '128'
 
-# Concurrency 144: host-only Mamba checkpoints, 78 GB of the host pool pinned to Mamba states, 24 decode rounds
+# Concurrency 144: host-only Mamba checkpoints, 40 GB of the host pool for Mamba states, 24 decode rounds
 # between prefills from 40 running requests; post-verify CUDA graph off.
-override_c144-top-hostckpt-fp8host-mamba78-pdi24-mbs40-nopv:
-  name: qwen3.8next-fp4-gb300-sglang-agentx-c144-top-hostckpt-fp8host-mamba78-pdi24-mbs40-nopv
+override_c144-top-hostckpt-fp8host-mamba40-pdi24-mbs40-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c144-top-hostckpt-fp8host-mamba40-pdi24-mbs40-nopv
   roles:
     agg:
       env:
         SGLANG_ENABLE_EAGLE_POST_VERIFY_CUDA_GRAPH: '0'
         SGLANG_ENABLE_POST_VERIFY_LATE_JOIN: '0'
         SGLANG_OPT_MAMBA_HOST_ONLY_CHECKPOINT: '1'
-        SGLANG_HICACHE_MAMBA_SIZE_GB: '78'
+        SGLANG_HICACHE_MAMBA_SIZE_GB: '40'
         SGLANG_OPT_MAMBA_HOST_ONLY_CONCURRENT_FETCH: '1'
         SGLANG_OPT_HICACHE_PINNED_INDEX_H2D: '1'
         SGLANG_ENABLE_QSA_DRAFT_EXTEND_UNION: '1'
@@ -230,10 +234,10 @@ override_c144-top-hostckpt-fp8host-mamba78-pdi24-mbs40-nopv:
     env:
       CONC: '144'
 
-# Concurrency 160: host-only Mamba checkpoints, 78 GB Mamba host share, 21 decode rounds between prefills from
-# 44 running requests; post-verify CUDA graph off.
-override_c160-top-hostckpt-fp8host-mamba78-pdi21-nopv:
-  name: qwen3.8next-fp4-gb300-sglang-agentx-c160-top-hostckpt-fp8host-mamba78-pdi21-nopv
+# Concurrency 160: host-only Mamba checkpoints, 48 GB of the host pool for Mamba states, 21 decode rounds
+# between prefills from 44 running requests; post-verify CUDA graph off.
+override_c160-top-hostckpt-fp8host-mamba48-pdi21-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c160-top-hostckpt-fp8host-mamba48-pdi21-nopv
   roles:
     agg:
       env: &c160_env
@@ -242,7 +246,7 @@ override_c160-top-hostckpt-fp8host-mamba78-pdi21-nopv:
         SGLANG_QSA_FP8_POOL_VERIFY_WS_SPLITS: '2'
         SGLANG_QSA_FP8_POOL_VERIFY_WS_PDL: '1'
         SGLANG_OPT_MAMBA_HOST_ONLY_CHECKPOINT: '1'
-        SGLANG_HICACHE_MAMBA_SIZE_GB: '78'
+        SGLANG_HICACHE_MAMBA_SIZE_GB: '48'
         SGLANG_OPT_MAMBA_HOST_ONLY_CONCURRENT_FETCH: '1'
         SGLANG_PLE_FUSED_EXTEND_CONV_CUDNN_SHAPES: '1'
         SGLANG_OPT_HICACHE_PINNED_INDEX_H2D: '1'
@@ -262,9 +266,9 @@ override_c160-top-hostckpt-fp8host-mamba78-pdi21-nopv:
     env:
       CONC: '160'
 
-# Concurrency 160: as above with 15 decode rounds between prefills.
-override_c160-top-hostckpt-fp8host-mamba78-nopv:
-  name: qwen3.8next-fp4-gb300-sglang-agentx-c160-top-hostckpt-fp8host-mamba78-nopv
+# Concurrency 192: as concurrency 160 with 15 decode rounds between prefills.
+override_c192-top-hostckpt-fp8host-mamba48-pdi15-nopv:
+  name: qwen3.8next-fp4-gb300-sglang-agentx-c192-top-hostckpt-fp8host-mamba48-pdi15-nopv
   roles:
     agg:
       env: *c160_env
@@ -274,4 +278,4 @@ override_c160-top-hostckpt-fp8host-mamba78-nopv:
         prefill-decode-interval-min-bs: 44
   benchmark:
     env:
-      CONC: '160'
+      CONC: '192'

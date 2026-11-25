@@ -7988,7 +7988,7 @@ qwen3.8next-fp4-gb300-sglang-agentic-mtp:
   srt-recipe-dir: qwen3.8next/sglang/gb300-fp4-mtp
   scenarios:
     agentic-coding:
-    # HiCache rows take the GB300 profile's proportional per-GPU host DRAM allowance (241 GB).
+    # HiCache sizes (150-165 GB) fit the 230000 MiB per-worker host memory limit with the pinned embedding table.
     - search-space:
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [2], srt-recipe: agg-low-variants.yaml:override_c2-cap2 }
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: none, conc-list: [8], srt-recipe: agg-low-variants.yaml:override_c8-cap2-pdi40 }
@@ -7998,9 +7998,9 @@ qwen3.8next-fp4-gb300-sglang-agentic-mtp:
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [30], srt-recipe: agg-mid-variants.yaml:override_c30-mid2-r6 }
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [30], srt-recipe: agg-mid-variants.yaml:override_c30-mid2-r7 }
       - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [128], srt-recipe: agg-top-variants.yaml:override_c128-top-full-fp8h-pdi30 }
-      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [144], srt-recipe: agg-top-variants.yaml:override_c144-top-hostckpt-fp8host-mamba78-pdi24-mbs40-nopv }
-      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [160], srt-recipe: agg-top-variants.yaml:override_c160-top-hostckpt-fp8host-mamba78-pdi21-nopv }
-      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [160], srt-recipe: agg-top-variants.yaml:override_c160-top-hostckpt-fp8host-mamba78-nopv }
+      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [144], srt-recipe: agg-top-variants.yaml:override_c144-top-hostckpt-fp8host-mamba40-pdi24-mbs40-nopv }
+      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [160], srt-recipe: agg-top-variants.yaml:override_c160-top-hostckpt-fp8host-mamba48-pdi21-nopv }
+      - { gpus-per-worker: 1, tp: 1, ep: 1, dp-attn: false, require-power: true, spec-decoding: mtp, kv-offloading: dram, kv-offload-backend: { name: hicache }, conc-list: [192], srt-recipe: agg-top-variants.yaml:override_c192-top-hostckpt-fp8host-mamba48-pdi15-nopv }
 
 qwen3.8next-fp4-gb300-dynamo-sglang-agentic-mtp-disagg-colocated:
   image: lmsysorg/sglang:qwen38-fn-gb300-bbbe528@sha256:ccf5f31ca191ec2c110b1f2050905e184f647c4889c21986097818c45da9cfa8
@@ -8016,7 +8016,7 @@ qwen3.8next-fp4-gb300-dynamo-sglang-agentic-mtp-disagg-colocated:
   srt-recipe-dir: qwen3.8next/sglang/gb300-fp4/agentx
   scenarios:
     agentic-coding:
-    # TP1 prefill and decode workers on one 4-GPU node; HiCache on the prefill workers (241 GB per prefill GPU).
+    # TP1 prefill and decode workers on one 4-GPU node; HiCache on the prefill workers (165 GB at 1P2D, 150 GB at 2P2D).
     - search-space:
       - spec-decoding: mtp
         kv-offloading: dram
