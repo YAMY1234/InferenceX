@@ -1,5 +1,6 @@
 # Qwen3.8-Flash-Next NVFP4 on GB300, aggregated TP1 on one GPU, KV cache on the GPU (no HiCache).
-# Image: lmsysorg/sglang:qwen38-fn-gb300-bbbe528 (SGLang qwen38-fn-rubin branch).
+# Image: lmsysorg/sglang:qwen38-fn-gb300-bbbe528 (SGLang qwen38-fn-rubin branch). Sets the switches the mid recipe
+# also sets: small-M BF16 GEMM routes (SM107 or SM103), fused shared-expert activation, TRT-LLM MoE PDL.
 base:
   schema: 2
   name: qwen3.8next-fp4-gb300-sglang-agentx
@@ -159,6 +160,11 @@ base:
         SGLANG_HICACHE_MAMBA_SLOT_STATE_ASYNC: '1'
         SGLANG_QSA_PREFILL_FAST_SELECT_TOPK: onepass
         FLASHINFER_TOPK_ALGO: default
+        SGLANG_ENABLE_SM107_BF16_SMALLM_ROUTES: '1'
+        SGLANG_ENABLE_SM107_BF16_SMALLM_NONBITWISE_ROUTES: '1'
+        SGLANG_ENABLE_SM107_BF16_SMALLM_NONBITWISE_LOWM_ROUTES: '1'
+        SGLANG_ENABLE_SM107_SHARED_EXPERT_FUSED_ACT: '1'
+        SGLANG_TRTLLM_MOE_SM107_PDL: all
       args:
         enable-decode-warmup: true
         decode-warmup-prompt-len: 12288
@@ -234,19 +240,6 @@ override_c2-cap2:
   benchmark:
     env:
       CONC: '2'
-
-# Concurrency 8: running cap 2; 40 decode rounds between prefills.
-override_c8-cap2-pdi40:
-  name: qwen3.8next-fp4-gb300-sglang-agentx-c8-cap2-pdi40
-  roles:
-    agg:
-      args:
-        cuda-graph-max-bs-decode: 8
-        cuda-graph-bs-decode: [1, 2, 3, 4, 5, 6, 7, 8]
-        prefill-decode-interval: 40
-  benchmark:
-    env:
-      CONC: '8'
 
 # Concurrency 10: running cap 2; 40 decode rounds between prefills.
 override_c10-cap2-pdi40:
